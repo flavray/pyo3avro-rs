@@ -1,0 +1,16 @@
+[package]
+name = "pyo3avro-rs"
+version = "0.1.0"
+authors = ["Flavien Raynaud <flavr@yelp.com>"]
+
+[dependencies]
+avro-rs = "0.4"
+
+[dependencies.pyo3]
+# version = "0.4.1"
+version = "0.5.0-alpha.1"
+features = ["extension-module"]
+
+[lib]
+name = "pyo3avro_rs"
+crate-type = ["cdylib"]
