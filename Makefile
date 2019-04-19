@@ -1,4 +1,4 @@
-.PHONY: all build build-release clean dev-packages fast-py-test py-test rust-test test
+.PHONY: all build build-release clean dev-packages venv fast-py-test py-test rust-test test
 
 all: build
 
@@ -23,6 +23,9 @@ py-test: dev-packages install fast-py-test
 
 fast-py-test:
 	pipenv run py.test tests
+
+venv: dev-packages
+	pipenv shell
 
 clean:
 	pipenv --rm || true
