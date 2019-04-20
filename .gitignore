@@ -1,5 +1,5 @@
-/build
-/dist
 /target
 **/*.rs.bk
 Cargo.lock
+
+Pipfile.lock
