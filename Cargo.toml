@@ -1,15 +1,19 @@
 [package]
 name = "pyo3avro-rs"
 version = "0.1.0"
-authors = ["Flavien Raynaud <flavr@yelp.com>"]
+authors = ["Flavien Raynaud <flavr@yelp.com>", "Antonio Verardi <antonio@yelp.com>"]
+edition = "2018"
 
 [dependencies]
 avro-rs = "0.4"
 
 [dependencies.pyo3]
-# version = "0.4.1"
-version = "0.5.0-alpha.1"
-features = ["extension-module"]
+version = "0.6.0"
+
+# TODO: remove after https://github.com/PyO3/pyo3/issues/341
+[features]
+extension-module = ["pyo3/extension-module"]
+default = ["extension-module"]
 
 [lib]
 name = "pyo3avro_rs"
