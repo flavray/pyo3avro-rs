@@ -8,6 +8,7 @@ use avro_rs::types::Value;
 use avro_rs::Schema;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict, PyList};
+use pyo3::PyDowncastError;
 
 struct Bytes {
     bytes: Vec<u8>,
@@ -60,8 +61,7 @@ fn to_pyobject(py: Python, datum: Value) -> PyObject {
         Value::String(string) => string.into_object(py),
         Value::Fixed(_, bytes) => Bytes { bytes }.into_object(py),
         Value::Enum(_, symbol) => symbol.into_object(py),
-        Value::Union(None) => py.None(),
-        Value::Union(Some(item)) => to_pyobject(py, *item),
+        Value::Union(item) => to_pyobject(py, *item),
         Value::Array(items) => {
             // TODO
             let list = PyList::empty(py);
@@ -91,7 +91,7 @@ fn to_pyobject(py: Python, datum: Value) -> PyObject {
 fn to_avro_value(py: Python, datum: &PyObject, schema: &Schema) -> PyResult<Value> {
     match schema {
         &Schema::Null if datum.is_none() => Ok(Value::Null),
-        &Schema::Null => panic!("argh"),
+        &Schema::Null => Err(PyErr::from(PyDowncastError)),
         &Schema::Boolean => {
             let b = datum.extract::<bool>(py)?;
             Ok(Value::Boolean(b))
@@ -145,10 +145,22 @@ fn to_avro_value(py: Python, datum: &PyObject, schema: &Schema) -> PyResult<Valu
 
             Ok(Value::Map(items))
         }
-        &Schema::Union(_) if datum.is_none() => Ok(Value::Union(None)),
-        &Schema::Union(ref inner) => Ok(Value::Union(Some(Box::new(to_avro_value(
-            py, datum, inner,
-        )?)))),
+        &Schema::Union(ref inner) => {
+            // Optimization for when union is used for optional values
+            if inner.is_nullable() && datum.is_none() {
+                Ok(Value::Union(Box::new(Value::Null)))
+            } else {
+                let variants = inner.variants();
+                for variant in variants {
+                    let value = to_avro_value(py, datum, variant);
+                    match value {
+                        Ok(v) => return Ok(Value::Union(Box::new(v))),
+                        _ => continue,
+                    };
+                }
+                Err(PyErr::from(PyDowncastError))
+            }
+        }
         &Schema::Record {
             ref fields,
             ref lookup,
@@ -163,7 +175,7 @@ fn to_avro_value(py: Python, datum: &PyObject, schema: &Schema) -> PyResult<Valu
                 let fschema = if let Some(&position) = lookup.get(&key) {
                     &fields[position].schema
                 } else {
-                    panic!("argh");
+                    return Err(PyErr::from(PyDowncastError));
                 };
 
                 let value = to_avro_value(py, &valueo.to_object(py), fschema)?;
@@ -179,14 +191,14 @@ fn to_avro_value(py: Python, datum: &PyObject, schema: &Schema) -> PyResult<Valu
                 if let Some(index) = symbols.iter().position(|ref item| item == &&string) {
                     Ok(Value::Enum(index as i32, string))
                 } else {
-                    panic!("argh");
+                    return Err(PyErr::from(PyDowncastError));
                 }
             } else {
                 let index = datum.extract::<i32>(py)? as usize;
                 if index < symbols.len() {
                     Ok(Value::Enum(index as i32, symbols[index].clone()))
                 } else {
-                    panic!("argh")
+                    return Err(PyErr::from(PyDowncastError));
                 }
             }
         }

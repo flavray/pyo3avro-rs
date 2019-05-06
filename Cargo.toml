@@ -5,7 +5,7 @@ authors = ["Flavien Raynaud <flavr@yelp.com>", "Antonio Verardi <antonio@yelp.co
 edition = "2018"
 
 [dependencies]
-avro-rs = "0.4"
+avro-rs = "0.6.5"
 
 [dependencies.pyo3]
 version = "0.6.0"
