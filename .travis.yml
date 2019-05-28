@@ -2,3 +2,9 @@ language: rust
 rust: nightly
 cache: cargo
 script: ./scripts/travis-test.sh
+before_install:
+  - sudo add-apt-repository ppa:deadsnakes/ppa -y
+  - sudo apt-get update
+  - sudo apt-get install -y python-pip python-dev python3.7 build-essential
+  - pip install --user pipenv
+  - rustup component add rustfmt --toolchain nightly-x86_64-unknown-linux-gnu
