@@ -1,8 +1,8 @@
-from pyo3avro_rs import AvroSchema
+from pyo3avro_rs import Schema
 
 
 def run():  # type: () -> None
-    schema = AvroSchema('{"type": "string"}')
+    schema = Schema('{"type": "string"}')
 
     payload = schema.write("some-text")
     initial = schema.read(payload)

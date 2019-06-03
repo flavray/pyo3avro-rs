@@ -20,7 +20,7 @@ test: rust-test py-test
 rust-test:
 	cargo test --no-default-features
 
-py-test: dev-packages install static-py-test fast-py-test
+py-test: dev-packages install fast-py-test static-py-test
 
 fast-py-test:
 	pipenv run py.test tests

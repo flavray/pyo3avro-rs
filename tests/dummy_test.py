@@ -1,6 +1,11 @@
-from pyo3avro_rs import AvroSchema
+import pytest
+from pyo3avro_rs import Schema
 
 
 def test_dummy() -> None:
-    schema = AvroSchema('{"type": "string"}')
-    assert schema is not None
+    assert Schema('{"type": "string"}')
+
+
+def test_wrong_schema() -> None:
+    with pytest.raises(ValueError):
+        Schema('{"type": "error"}')
