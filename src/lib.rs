@@ -176,26 +176,19 @@ fn to_avro_value(py: Python, datum: &PyObject, schema: &SchemaRs) -> PyResult<Va
                 Err(PyErr::from(PyDowncastError))
             }
         }
-        &SchemaRs::Record {
-            ref fields,
-            ref lookup,
-            ..
-        } => {
+        &SchemaRs::Record { ref fields, .. } => {
             let record_dict = datum.cast_as::<PyDict>(py)?;
-            let mut rfields = Vec::with_capacity(record_dict.len());
+            let mut rfields = Vec::with_capacity(fields.len());
 
-            for (keyo, valueo) in record_dict.iter() {
-                let key = keyo.extract::<String>()?;
-
-                let fschema = if let Some(&position) = lookup.get(&key) {
-                    &fields[position].schema
-                } else {
-                    return Err(PyErr::from(PyDowncastError));
-                };
-
-                let value = to_avro_value(py, &valueo.to_object(py), fschema)?;
-
-                rfields.push((key, value));
+            for field in fields.iter() {
+                let keyo = field.name.clone().into_object(py);
+                match record_dict.get_item(keyo) {
+                    Some(value) => {
+                        let value = to_avro_value(py, &value.into_object(py), &field.schema)?;
+                        rfields.push((field.name.clone(), value));
+                    }
+                    None => return Err(PyErr::from(PyDowncastError)),
+                }
             }
 
             Ok(Value::Record(rfields))
